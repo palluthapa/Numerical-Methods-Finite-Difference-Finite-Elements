@@ -1,0 +1,43 @@
+% WE WANT TO CREATE THE STIFFNESS MATRIX USING THE FUNCTION PHI_MATRIX.
+
+% DEFINE THE INPUTS FOR PHI_MATRIX
+list_nodes = [0 0; 1 0; 1 1; 0 1];
+elem_matrix = [0 0 0 1 1 1; 0 0 1 0 1 1];
+K = [1 1; 0 1; 1 1; 1 0];
+coeffs = phi_matrix(elem_matrix,list_nodes,K);
+
+N = size(list_nodes,1); % N IS THE NUMBER OF NODES
+M = size(elem_matrix,1); % M IS THE NUMBER OF ELEMENTS
+
+% TO CREATE THE STIFFNESS MATRIX WE NEED TO INTEGRATE
+% GRAD(PHI_I).GRAD(PHI_J) OVER THE WHOLE DOMAIN.
+% FOR LINEAR SHAPE FUNCTIONS GRAD(PHI) IS PIECEWISE CONSTANT, SO WE JUST
+% NEED TO EXTRACT THE CONSTANTS AND MULTIPLY BY THE AREA OF THE ELEMENT
+
+% PRE-COMPUTE THE AREAS OF EACH ELEMENT TO SAVE TIME
+Areas = zeros(M,1);
+for j = 1:M
+    pointsx = elem_matrix(j,[1 3 5]);
+    pointsy = elem_matrix(j,[2 4 6]);
+    Areas(j) = abs(0.5*((pointsx(1)-pointsx(3))*(pointsy(2)-pointsy(1))-(pointsx(1)-pointsx(2))*(pointsy(3)-pointsy(1))));
+end
+
+A = zeros(N,N);
+
+% THE I, J COUNTERS LOOP OVER THE ENTRIES OF A. ON EACH ENTRY WE WANT TO
+% SUM OVER CONTRIBUTIONS FROM ALL ELEMENTS AND SO LOOP OVER ELEMENTS USING
+% K. NOTE THAT WE ONLY GET A CONTRIBUTION IF BOTH NODES I AND J ARE PART OF
+% ELEMENT K.
+
+for i = 1:N
+    for j = 1:N
+        for k = 1:M
+            if K(i,k)==1 && K(j,k) == 1
+                elem_contribution = Areas(k)*(coeffs(i,3*k-2)*coeffs(j,3*k-2)+coeffs(i,3*k-1)*coeffs(j,3*k-1));
+                A(i,j) = A(i,j) + elem_contribution;
+            end
+        end
+    end
+end
+
+

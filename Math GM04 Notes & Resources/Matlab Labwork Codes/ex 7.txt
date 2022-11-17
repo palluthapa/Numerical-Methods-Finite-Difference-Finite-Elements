@@ -1,0 +1,98 @@
+% EXERCISE 7 CODE
+%{
+% QUESTION 1
+% SOLVE u_t = u_xx using implicit algorithm from lecture notes (6.39).
+% Ends held at zero and initial condition modelling a point source of heat.
+clear all
+% INITIALISE
+dt = 0.01;
+dx = 0.01;
+x = -1:dx:1;
+Nx = length(x);
+t = 0:dt:5;
+Nt = length(t);
+u0 = [0 exp(-10*x(2:end-1).^2) 0];
+
+% VECTORS
+beta = -1-2*dt/dx^2;
+alpha = dt/dx^2;
+gamma = dt/dx^2;
+
+a = [beta*ones(1,Nx-1)];
+c = [gamma*ones(1,Nx-1)];
+b = [alpha*ones(1,Nx-1)];
+
+% APPLY THOMAS ALGORITHM AT EACH STEP
+uM = zeros(Nx,Nt);
+uM(:,1) = u0; % uM will be the matrix we store our solution in. For now we
+% only know values at fist timestep.
+
+for j = 2:Nt
+    u = tridiag(a,b,c,-uM(2:end-1,j-1)); % IMPLEMENTS THE THOMAS ALGORTIHM
+     % -- ALTERNATIVELY COULD CREATE THE MATRIX A EXPLICITLY AND USE \
+    uM(:,j) = [0; u; 0]; % FILL IN THE NEXT TIME-STEP WITH SOLUTION
+    % CALCULATED FROM THOMAS ALGORITHM
+end
+% SOLUTION SHOULD QUICKLY GO TO ZERO -- THE HEAT DIFFUSES THROUGH THE BAR
+AND LEAKS OUT THE ENDS
+%}
+%%
+%{
+clear all
+% QUESTION 2
+% Now we have a no-flux condition at either end of the bar.
+% INITIALISE
+dt = 0.01;
+dx = 0.01;
+x = -1:dx:1;
+Nx = length(x);
+t = 0:dt:5;
+Nt = length(t);
+u0 = [exp(-10*x.^2)];
+
+% VECTORS
+beta = -1-2*dt/dx^2;
+alpha = dt/dx^2;
+gamma = dt/dx^2;
+
+a = [1 beta*ones(1,Nx-2) 1];
+c = [-1 alpha*ones(1,Nx-1)];
+b = [gamma*ones(1,Nx-1) -1]; % THE MATRIX IS DIFFERENT BECAUSE OF THE
+% BOUNDARY CONDITIONS. WE IMPLEMENT THESE USING A FIRST-ORDER
+% FINITE-DIFFERENCE EQUATION, WHICH CREATES INACCURACIES.
+
+% APPLY THOMAS ALGORITHM AT EACH STEP
+uM = zeros(Nx,Nt);
+uM(:,1) = u0;
+
+for j = 2:Nt
+    uM(:,j) = tridiag(a,b,c,[0; -uM(2:end-1,j-1); 0]);
+end
+% SOLUTION SHOULD QUICKLY DIFFUSE TO A CONSTANT -- HEAT CAN'T ESCAPE BUT
+STILL WANTS TO BE DISTRIBUTED EVENLY THROUGHOUT THE BAR.
+%}
+%%
+% QUESTION 3
+clear all
+% INITIALISE
+dx = 0.1;
+dy = 0.1;
+x = 0:dx:1;
+y = 0:dy:1;
+Nx = length(x);
+Ny = length(y);
+tol = 1e-3;
+u_bdy1 = cos(x);
+u_old = zeros(Nx,Ny);
+u_old(:,1) = u_bdy1; % OUR INITIAL GUESS
+u_new = ones(Nx,Nx); 
+
+while max(abs(u_new-u_old)>tol) % CONTINUE ITERATING UNTIL SUCCESSIVE SOLUTIONS ARE CLOSE TOGETHER
+    u_new = zeros(Nx,Ny);
+    u_new(:,1) = u_bdy1;
+    for i = 2:Nx-1
+        for j = 2:Ny-1
+            u_new(i,j) = 0.25*(u_old(i-1,j) + u_old(i+1,j) +u_old(i,j-1) + u_old(i,j+1));%UPDATE BASED ON OLD ITERATION
+        end
+    end
+end

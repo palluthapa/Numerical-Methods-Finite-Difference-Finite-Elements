@@ -1,0 +1,37 @@
+% EXERCISE 9, 1-D FEM
+clear all
+% Exact solution
+xx = linspace(0,6);
+TT = -xx.^2+9*xx;
+
+% Build basis functions
+xv = [0 2 4 6]; % VECTOR OF NODAL POINTS
+syms x
+phi = [];
+
+% GENERATE INTERIOR BASIS FUNCTIONS USING HEAVISIDE FUNCTION
+for j = 2:3
+    phitemp = symfun(0.5*((x-xv(j-1))*heaviside(x-xv(j-1))*(1-heaviside(x-xv(j)))-(x-xv(j+1))*heaviside(x-xv(j))*(1-heaviside(x-xv(j+1)))),x);
+    phi = [phi, phitemp]; % CREATES A VECTOR OF FUNCTIONS
+end
+
+phi4 = symfun((x-4)/2*heaviside(x-4),x);
+phi = [phi, phi4];
+
+phip = diff(phi,x);
+
+% BUILD RIGHT-HAND-SIDE
+rhs = double(2*int(phi, 1e-4,6-1e-4) - 3*phi(6)); % NOTE HERE PHI(6) MEANS EVALUATE PHI AT 6
+% IT IS NOT THE 6TH ENTRY OF PHI! THIS IS BIG DIFFERENCE BETWEEN SYMBOLIC AND DOUBLE METHODS
+
+% BUILD MASS MATRIX
+A = phip.'*phip;
+A = double(int(A, 1e-4, 6-1e-4)); % CAN'T START AT 0 BECAUSE PHIp IS ILL-DEFINED HERE
+
+solv = A\rhs.';
+
+T_num = phi*solv;
+ezplot(T_num, [0 6]);
+hold on
+plot(xx,TT);
+title('')
